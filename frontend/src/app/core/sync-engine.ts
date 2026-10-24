@@ -69,20 +69,25 @@ export class SyncEngine {
   private retryTimer: ReturnType<typeof setTimeout> | undefined;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
 
+  /**
+   * Liga os gatilhos automáticos (idempotente) e sincroniza agora. É chamado toda vez que o app
+   * (re)entra na tela principal — inclusive após um novo login, quando a fila guardada precisa ser enviada.
+   */
   start(): void {
-    if (this.started) return;
-    this.started = true;
-    addEventListener('online', this.onOnline);
-    addEventListener('offline', this.onOffline);
-    document.addEventListener('visibilitychange', this.onVisible);
-    this.pollTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') void this.run(true);
-    }, POLL_MS);
+    if (!this.started) {
+      this.started = true;
+      this.failures = 0;
+      addEventListener('online', this.onOnline);
+      addEventListener('offline', this.onOffline);
+      document.addEventListener('visibilitychange', this.onVisible);
+      this.pollTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') void this.run(true);
+      }, POLL_MS);
+    }
     void this.run();
   }
 
   stop(): void {
-    if (!this.started) return;
     this.started = false;
     removeEventListener('online', this.onOnline);
     removeEventListener('offline', this.onOffline);

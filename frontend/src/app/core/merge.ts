@@ -37,7 +37,11 @@ export function applyChanges(todo: Todo, changes: Changes): Todo {
     const change = changes[field];
     if (!change) continue;
     const current = (next as unknown as Record<Field, FieldValue>)[field] ?? null;
-    if (current === change.value) continue;
+    if (current === change.value) {
+      // mesmo valor: só registra o instante mais recente (igual ao servidor) para o merge continuar comutativo
+      if (change.at > (next.fieldTimes[field] ?? 0)) next.fieldTimes[field] = change.at;
+      continue;
+    }
     if (!lwwWins(change.at, change.value, next.fieldTimes[field] ?? 0, current)) continue;
     target[field] = change.value;
     next.fieldTimes[field] = change.at;

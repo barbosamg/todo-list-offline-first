@@ -43,6 +43,15 @@ describe('merge LWW por campo', () => {
     expect(x.title).toBe(y.title);
   });
 
+  it('mesmo valor com instante mais novo só registra o instante (merge continua comutativo)', () => {
+    // dispositivo A "reabre" (pending @30) quando o servidor já está pending; o B conclui @20 e chega depois
+    const reopenFirst = applyChanges(applyChanges(fresh(), ch('status', 'pending', 30)), ch('status', 'completed', 20));
+    const completeFirst = applyChanges(applyChanges(fresh(), ch('status', 'completed', 20)), ch('status', 'pending', 30));
+    expect(reopenFirst.status).toBe('pending');
+    expect(completeFirst.status).toBe('pending');
+    expect(reopenFirst.fieldTimes['status']).toBe(30);
+  });
+
   it('recalcula isUrgent a partir de título e descrição', () => {
     let t = applyChanges(fresh(), ch('title', 'Pagar conta', 10));
     expect(t.isUrgent).toBe(false);
