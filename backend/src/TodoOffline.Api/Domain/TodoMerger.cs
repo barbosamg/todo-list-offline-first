@@ -76,7 +76,14 @@ public static class TodoMerger
         {
             var currentAt = todo.FieldTimes.GetValueOrDefault(def.Name, 0);
             var current = def.Get(todo);
-            if (string.Equals(current, value, StringComparison.Ordinal)) continue;
+            if (string.Equals(current, value, StringComparison.Ordinal))
+            {
+                // Mesmo valor: nada muda para o usuário, mas o instante mais recente PRECISA ser registrado.
+                // Sem isso, uma edição antiga (de outro dispositivo) chegando depois venceria uma mais nova
+                // que por acaso gravou o mesmo valor — o merge deixaria de ser comutativo.
+                if (at > currentAt) todo.FieldTimes[def.Name] = at;
+                continue;
+            }
 
             var wins = at > currentAt
                 || (at == currentAt && string.CompareOrdinal(value ?? "", current ?? "") > 0);
