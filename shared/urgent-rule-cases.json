@@ -1,0 +1,14 @@
+[
+  { "name": "título em minúsculas", "title": "Ligar para o cliente urgente", "description": null, "urgent": true },
+  { "name": "título capitalizado", "title": "Urgente: revisar contrato", "description": null, "urgent": true },
+  { "name": "título em maiúsculas", "title": "PAGAR BOLETO URGENTE", "description": null, "urgent": true },
+  { "name": "apenas na descrição", "title": "Enviar relatório", "description": "Isso é URGENTE, o prazo é hoje", "urgent": true },
+  { "name": "case misto", "title": "uRgEnTe", "description": null, "urgent": true },
+  { "name": "no meio de outra palavra", "title": "Resolver urgentemente", "description": null, "urgent": true },
+  { "name": "plural", "title": "Tarefas urgentes da semana", "description": null, "urgent": true },
+  { "name": "com pontuação", "title": "Fazer isso (urgente!)", "description": null, "urgent": true },
+  { "name": "sem a palavra", "title": "Comprar leite", "description": "Pode ser amanhã", "urgent": false },
+  { "name": "palavra parecida", "title": "Urgência na entrega", "description": "Emergência", "urgent": false },
+  { "name": "descrição nula e título vazio", "title": "", "description": null, "urgent": false },
+  { "name": "descrição vazia", "title": "Estudar", "description": "", "urgent": false }
+]
