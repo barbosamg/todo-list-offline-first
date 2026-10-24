@@ -7,7 +7,7 @@ Desafio técnico Way2: aplicação de lista de tarefas que continua **totalmente
 | | |
 |---|---|
 | Diagramas de arquitetura | [`docs/architecture.md`](docs/architecture.md) (visão geral · fluxo de sync offline · fluxo da integração externa) |
-| Testes automatizados | 45 no backend (xUnit + PostgreSQL real) · 37 no frontend (Vitest) |
+| Testes automatizados | **476**: 207 backend + 20 consumidor (xUnit, PostgreSQL real) · 147 frontend (Vitest) · 102 E2E (Playwright) — ver [§5](#5-testes) |
 | Usuário de teste | `demo@way2.dev` / `Demo@1234` |
 
 ```mermaid
@@ -219,7 +219,7 @@ Visual sóbrio de ferramenta corporativa: cinzas-ardósia neutros, azul-aço par
 - **Sem limitação de taxa (*rate limiting*) em login/sync**, sem HTTPS/HSTS embutidos (esperado atrás de um proxy TLS).
 - **Conflitos no mesmo campo descartam uma das edições** (com aviso). *Próximo passo:* guardar a versão perdida e oferecer "restaurar" na UI.
 - **Dados locais não são criptografados** (IndexedDB em texto claro, como qualquer PWA). Aceitável para tarefas; para dados sensíveis, cifrar com chave derivada do login.
-- **Testes de ponta a ponta (Playwright) e de componentes Angular não foram escritos.** O comportamento ponta a ponta foi validado manualmente (roteiro do §1) e a lógica crítica tem testes automatizados (§5). *Como faria:* um E2E que desliga a rede (`context.setOffline`), cria tarefas e verifica sync + evento no consumidor.
+- **Cobertura de testes:** o frontend tem testes de unidade/componente só dos pontos essenciais (§5), sem cobertura de todos os componentes (ex.: telas de login e shell só são exercitadas pelo E2E). Os E2E rodam apenas no Chrome (Chromium); Firefox/Safari não foram testados. Não há CI configurado (`docker compose up --build` + `npm test` na pasta `e2e` fazem o mesmo à mão).
 - **Listas longas:** a UI renderiza todas as tarefas filtradas. Para milhares de itens, *virtual scroll* (`@angular/cdk`).
 - **Dispatcher multi-instância** foi desenhado para isso (SKIP LOCKED + lease), mas só foi testado com uma instância.
 - **Acessibilidade:** teclado/foco/rótulos ARIA cuidados, mas sem auditoria formal nem teste com leitor de tela.
@@ -231,25 +231,52 @@ Visual sóbrio de ferramenta corporativa: cinzas-ardósia neutros, azul-aço par
 
 ## 5. Testes
 
+Quatro conjuntos de testes, **476 no total**, todos passando:
+
+| Camada | Qtde | Como roda | O que cobre |
+|---|---|---|---|
+| **Backend** (xUnit, PostgreSQL real) | 207 | `dotnet test backend` | domínio, auth, sync, outbox, inicialização |
+| **Consumidor simulado** (xUnit) | 20 | `dotnet test backend` (está na mesma solução) | assinatura, idempotência, versões, falhas injetadas |
+| **Frontend** (Vitest, IndexedDB falso) | 147 | `cd frontend && npm ci && npm test -- --watch=false` | regra, merge, repositório, sync, estado da lista e componentes essenciais |
+| **E2E** (Playwright + Chrome) | 102 | `cd e2e && npm ci && npm test` (com `docker compose up --build` no ar) | o sistema inteiro, no navegador, contra o stack real |
+
 ```bash
-# Backend — precisa de Docker (sobe um PostgreSQL descartável via Testcontainers)
+# 1) unitários e de integração do backend + consumidor — precisa de Docker (PostgreSQL descartável via Testcontainers)
 dotnet test backend
 
-# Frontend — Vitest + IndexedDB falso (fake-indexeddb)
+# 2) unitários do frontend
 cd frontend && npm ci && npm test -- --watch=false
+
+# 3) E2E — o stack precisa estar no ar:  docker compose up --build -d
+cd e2e && npm ci && npm test          # usa o Google Chrome instalado (não baixa navegador)
+npm run report                        # relatório HTML (screenshots/trace das falhas)
 ```
 
-**Backend (45 testes, PostgreSQL 17 real — nada de banco em memória, porque o sync usa locks, `jsonb` e `SKIP LOCKED`):**
-- **Regra de urgentes:** vetores compartilhados com o frontend (case-insensitive, descrição, pontuação, nulos…).
-- **Merge / conflitos:** campos distintos mesclam; mesmo campo vence o instante mais recente **independente da ordem de chegada**; comutatividade e idempotência; empate determinístico; remoção "sticky"; validação atômica; relógio no futuro limitado.
-- **Ordenação padrão:** urgentes no topo (mesmo concluídas/baixa prioridade) e critérios internos.
-- **Sync (HTTP):** exige autenticação; criação offline puxada por outro dispositivo; isolamento entre usuários e *hijack* de id; merge de campos distintos; conflito no mesmo campo com aviso; **reenvio do mesmo lote é idempotente**; tombstones; operação inválida não derruba o lote; paginação do pull com cursor.
-- **Outbox:** versões e tipos dos eventos em ordem; replays/noops/rejeições **não** geram evento; entrega com assinatura HMAC válida; **retry com backoff** respeitando a ordem por tarefa (outra tarefa não é afetada); **dead-letter** após o máximo de tentativas liberando o próximo evento.
+**Backend (207, PostgreSQL 17 real — nada de banco em memória, porque o sync usa locks, `jsonb` e `SKIP LOCKED`):**
+- **Domínio:** regra de urgentes (vetores compartilhados com o frontend); merge LWW por campo — comutatividade e idempotência com centenas de permutações aleatórias, empate determinístico, remoção "sticky", relógio no futuro limitado, validação atômica (formatos, limites, datas inválidas, tipos errados); ordenação padrão (determinismo, desempates, urgentes acima de tudo); mapeamento dos DTOs.
+- **Autenticação:** cadastro e login (validações, e-mail duplicado e case-insensitive, mensagem genérica que não revela quais e-mails existem), hash PBKDF2 (salt, formato, entradas malformadas), JWT (claims, validade, adulteração, chave errada, token expirado/lixo → 401).
+- **Sync:** contrato e limites (200 operações por lote, cursor inválido, corpo vazio); criar+editar e criar+excluir no mesmo lote; limpar campos; isolamento entre usuários e *hijack* de id; instantes no futuro limitados; **paginação exata em 200/201**; cursor e sequência estritamente crescentes; **concorrência real** — 30 dispositivos enviando ao mesmo tempo sem perder nem repetir sequência, 25 edições simultâneas do mesmo campo convergindo ao instante mais recente, vários usuários em paralelo; `GET /api/todos` com todos os filtros combinados.
+- **Outbox / webhooks:** tipos e versões dos eventos em ordem; replays/noops/rejeições **não** geram evento; fan-out por consumidor com segredo próprio; **um consumidor falhando não atrasa o outro**; consumidores desabilitados não recebem; ordem estrita por tarefa com lote pequeno; contrato do payload; retry registrado no banco (tentativas, erro, próxima tentativa); **lease** de outra instância respeitado e expirado; dead-letter nunca é reenviado; backoff exponencial dentro da faixa de jitter e com teto; assinatura HMAC, cabeçalhos, 2xx/4xx/5xx, timeout e cancelamento no `WebhookSender`; sinal que acorda o dispatcher.
+- **Inicialização:** migrations aplicadas, usuário de teste idempotente (e desligável), consumidores da configuração criados/atualizados/desabilitados.
 
-**Frontend (37 testes):** regra de urgentes (mesmos vetores), merge LWW, *overlay* base+fila, ordenação e filtros/busca (sem acento, por lista), e o **ciclo offline→online**: escrita sem nenhuma chamada de rede, urgente offline subindo ao topo, coalescência da fila, criar+excluir offline sem envio, envio ao reconectar com confirmação, falha de rede mantendo a fila, edição durante o envio não se perde, tombstone apagando localmente e aviso de conflito.
+**Consumidor simulado (20):** assinatura inválida/ausente/adulterada → 401; duplicata aceita mas ignorada; versão antiga não regride a projeção; exclusão remove da projeção; falhas injetadas retornam 503 exatamente N vezes (e o log diz de qual tarefa); reset; painel servido.
+
+**Frontend (147):** autenticação (sessão salva/restaurada/corrompida, mensagens de erro), interceptor (Bearer, 401 → sessão expirada), repositório (criação/edição/exclusão, coalescência da fila, operações em voo, persistência entre "fechar e reabrir", bancos isolados por usuário), **motor de sync** (offline sem chamar a rede, 401/500/gateway, paginação, lotes de 200, operação recusada, chamadas simultâneas, evento `online`, retomada após novo login), estado da lista (urgentes, totais, listas, filtros) e componentes essenciais (linha da tarefa, campo de adicionar incl. Enter duplicado/IME, régua de sincronização, editor).
+
+**E2E (102) — o sistema inteiro, de verdade (Chrome → nginx + service worker → API → PostgreSQL → webhooks → consumidor):**
+- **Autenticação e sessão** (10): login/cadastro/erros, demo, sair preservando a fila, abrir offline.
+- **CRUD, listas, filtros, busca** (21): criar/editar/concluir/excluir e conferir no servidor, listas na barra lateral, filtros combinados, busca sem acento, ordem padrão.
+- **Urgentes** (13): os mesmos vetores dos testes unitários, na tela; case-insensitive; só na descrição; remover a palavra; ordem entre urgentes; urgente concluída fica no topo mesmo com filtros.
+- **Offline e falhas de rede** (17): `context.setOffline` — criar/editar/concluir/excluir sem rede, urgente sobe na hora, **nada chega ao servidor nem ao consumidor enquanto offline** e tudo chega depois; criar+excluir offline nunca é enviado; coalescência; 50 tarefas em lote; **recarregar a página offline** (service worker); fechar e reabrir com pendências; reconexão automática; *lie-fi*; erro 500; **resposta perdida (servidor aplicou, cliente não soube) sem duplicar**; operação recusada.
+- **Vários dispositivos / conflitos** (11): dois contextos com a mesma conta — criação, edição, exclusão propagadas; campos diferentes mesclados; **mesmo campo: vence o mais recente nas duas ordens de reconexão**, com aviso; editar o que o outro excluiu; criação offline nos dois lados; polling; dispositivo novo baixa o histórico.
+- **Integração externa** (11): created → updated → deleted em ordem e com versões; projeção do consumidor; retry com backoff sob falha injetada; ordem por tarefa preservada durante a falha; falha do consumidor não afeta o usuário; HMAC inválido; idempotência; versão antiga ignorada; painel em tempo real.
+- **Segurança e sessão** (5): isolamento de dados (UI e API), id roubado recusado, API exige token, bancos locais por conta, sessão expirada sem perder a fila e retomada após novo login.
+- **Celular** (6, Pixel 7): régua no topo, campo ao alcance do polegar, gaveta, *bottom sheet*, offline completo, sem rolagem horizontal.
+- **PWA e infraestrutura** (8): service worker ativo com app shell em cache, manifesto instalável, cabeçalhos de cache corretos, SPA fallback, proxy da API, OpenAPI/Scalar, sem erros no console e sem CDN externa.
+
+> **O que os testes encontraram (e foi corrigido):** (1) o merge deixava de ser comutativo quando uma edição trazia o mesmo valor com instante mais novo — uma edição antiga podia vencer uma nova; (2) depois de "Entrar novamente" a fila guardada não era reenviada; (3) o consumidor simulado não registrava de qual tarefa era cada falha injetada; (4) o campo de adicionar apagava texto novo ou duplicava a tarefa com Enter/digitação muito rápidos.
 
 ---
-
 ## 6. Uso de inteligência artificial
 
 Usei o **Claude Code (Claude Sonnet 5.5, Anthropic)** como assistente de programação ao longo de todo o desenvolvimento: ele ajudou a levantar a arquitetura, escrever o código (backend, frontend, consumidor, Docker), os testes e este README, e a depurar problemas encontrados ao rodar o sistema de verdade (por exemplo: colisão de porta com um PostgreSQL local, conexão "pendurada" mantendo o app em "Sincronizando", Enter não enviando o formulário). As decisões de escopo e de arquitetura foram revisadas e são minhas; **entendo e sei defender cada trecho do código e cada decisão aqui descrita**.
