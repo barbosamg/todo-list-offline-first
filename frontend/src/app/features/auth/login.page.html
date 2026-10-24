@@ -1,0 +1,73 @@
+<div class="page">
+  <aside class="story" aria-hidden="false">
+    <div class="brand">
+      <img src="favicon.svg" alt="" width="44" height="44" />
+      <strong class="display">Campo</strong>
+    </div>
+
+    <div class="pitch">
+      <h1 class="display">Tarefas que <span class="mk">não dependem</span> de sinal.</h1>
+      <p>
+        Crie, edite e conclua em campo, sem conexão. Tudo fica salvo no aparelho e sincroniza sozinho quando o sinal volta.
+      </p>
+    </div>
+
+    <ul class="facts">
+      <li><app-icon name="wifiOff" [size]="18" /><span>Funciona 100% offline</span></li>
+      <li><app-icon name="refresh" [size]="18" /><span>Sincronização automática</span></li>
+      <li><app-icon name="zap" [size]="18" /><span>Urgentes sempre no topo</span></li>
+    </ul>
+  </aside>
+
+  <main class="panel">
+    <form (submit)="submit($event)" novalidate>
+      <header>
+        <h2 class="display">{{ mode() === 'login' ? 'Entrar' : 'Criar conta' }}</h2>
+        <p>{{ mode() === 'login' ? 'Use sua conta para ver as suas tarefas.' : 'Cada conta enxerga apenas as próprias tarefas.' }}</p>
+      </header>
+
+      @if (mode() === 'register') {
+        <div class="field">
+          <label for="name">Nome</label>
+          <input #n id="name" class="input" autocomplete="name" [value]="name()" (input)="name.set(n.value)" required />
+        </div>
+      }
+
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input #e id="email" class="input" type="email" autocomplete="email" inputmode="email" [value]="email()" (input)="email.set(e.value)" required />
+      </div>
+
+      <div class="field">
+        <label for="password">Senha</label>
+        <input
+          #p
+          id="password"
+          class="input"
+          type="password"
+          [autocomplete]="mode() === 'login' ? 'current-password' : 'new-password'"
+          [value]="password()"
+          (input)="password.set(p.value)"
+          required
+        />
+      </div>
+
+      @if (error(); as msg) {
+        <p class="error" role="alert"><app-icon name="alert" [size]="16" />{{ msg }}</p>
+      }
+
+      <button type="submit" class="btn btn-primary submit" [disabled]="busy()">
+        {{ busy() ? 'Aguarde…' : mode() === 'login' ? 'Entrar' : 'Criar conta' }}
+      </button>
+
+      <div class="alt">
+        <button type="button" class="link" (click)="switchMode()">
+          {{ mode() === 'login' ? 'Criar uma conta' : 'Já tenho conta' }}
+        </button>
+        <button type="button" class="link" (click)="useDemo()">Preencher conta de demonstração</button>
+      </div>
+    </form>
+
+    <p class="note mono">O primeiro acesso precisa de internet. Depois disso o app abre e funciona offline.</p>
+  </main>
+</div>

@@ -1,0 +1,155 @@
+:host {
+  position: sticky;
+  top: calc(var(--rail-h) + 3px);
+  height: calc(100dvh - var(--rail-h) - 3px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 14px 14px;
+  background: var(--ink);
+  color: #dbe3ee;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 4px;
+}
+.brand img {
+  border-radius: 9px;
+}
+.brand strong {
+  display: block;
+  font-size: 26px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.brand small {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.25;
+  color: #8fa1b8;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.group {
+  margin: 16px 10px 6px;
+  font-size: 13px;
+  color: #7f92aa;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+.item:hover {
+  background: rgb(255 255 255 / 8%);
+}
+.item.active {
+  background: #fff;
+  color: var(--ink);
+}
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.n {
+  color: #8fa1b8;
+}
+.item.active .n {
+  color: var(--ink-2);
+}
+.u {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--marker);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tip {
+  margin: 16px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8fa1b8;
+}
+.tip strong {
+  color: #fff;
+}
+
+.me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+.who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.who div {
+  min-width: 0;
+}
+.who strong,
+.who small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.who strong {
+  color: #fff;
+  font-size: 14px;
+}
+.who small {
+  color: #8fa1b8;
+  font-size: 12px;
+}
+.me .btn {
+  color: #dbe3ee;
+}
+.me .btn:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+/* celular: gaveta */
+@media (max-width: 900px) {
+  :host {
+    position: fixed;
+    z-index: 45;
+    top: calc(var(--rail-h) + 3px);
+    left: 0;
+    width: min(300px, 86vw);
+    transform: translateX(-102%);
+    transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: var(--shadow-2);
+  }
+  :host(.open) {
+    transform: none;
+  }
+}

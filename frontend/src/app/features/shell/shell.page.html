@@ -1,0 +1,96 @@
+<app-sync-rail />
+
+<div class="app">
+  <app-sidebar [open]="menuOpen()" (picked)="menuOpen.set(false)" />
+  @if (menuOpen()) {
+    <div class="scrim" (click)="menuOpen.set(false)"></div>
+  }
+
+  <main>
+    <header class="top">
+      <button type="button" class="btn btn-icon menu" (click)="menuOpen.set(true)" aria-label="Abrir listas">
+        <app-icon name="menu" />
+      </button>
+      <div class="heading">
+        <h1 class="display">{{ state.title() }}</h1>
+        <p class="mono">
+          {{ summary().pending }} pendente{{ summary().pending === 1 ? '' : 's' }}
+          @if (summary().urgent) {
+            · <span class="urg">{{ summary().urgent }} urgente{{ summary().urgent === 1 ? '' : 's' }}</span>
+          }
+        </p>
+      </div>
+    </header>
+
+    <div class="composer-wrap">
+      <app-composer />
+    </div>
+
+    <app-filter-bar />
+
+    @if (state.urgent().length) {
+      <section class="block" aria-labelledby="h-urgent">
+        <h2 id="h-urgent" class="sec urgent display">
+          <span class="mk">Urgentes</span>
+          <span class="count mono">{{ state.urgent().length }}</span>
+        </h2>
+        <div class="list">
+          @for (t of state.urgent(); track t.id) {
+            <app-task-row
+              [todo]="t"
+              [pending]="pendingIds().has(t.id)"
+              [selected]="editingId() === t.id"
+              (toggle)="toggle($event)"
+              (open)="editingId.set($event)"
+            />
+          }
+        </div>
+      </section>
+    }
+
+    @if (state.others().length) {
+      <section class="block" aria-labelledby="h-others">
+        <h2 id="h-others" class="sec display">
+          <span>{{ state.urgent().length ? 'Demais tarefas' : 'Tarefas' }}</span>
+          <span class="count mono">{{ state.others().length }}</span>
+        </h2>
+        <div class="list">
+          @for (t of state.others(); track t.id) {
+            <app-task-row
+              [todo]="t"
+              [pending]="pendingIds().has(t.id)"
+              [selected]="editingId() === t.id"
+              (toggle)="toggle($event)"
+              (open)="editingId.set($event)"
+            />
+          }
+        </div>
+      </section>
+    }
+
+    @if (!state.visible().length) {
+      <div class="empty">
+        @if (state.hasFilters() && hasAny()) {
+          <app-icon name="search" [size]="28" />
+          <h2>Nenhuma tarefa encontrada</h2>
+          <p>Nada corresponde à busca ou aos filtros atuais.</p>
+          <button type="button" class="btn" (click)="state.clearFilters()">Limpar filtros</button>
+        } @else if (hasAny()) {
+          <app-icon name="inbox" [size]="28" />
+          <h2>Esta lista está vazia</h2>
+          <p>Escreva a primeira tarefa desta lista no campo acima.</p>
+          <button type="button" class="btn" (click)="focusComposer()">Escrever tarefa</button>
+        } @else {
+          <app-icon name="wifiOff" [size]="28" />
+          <h2>Comece pela primeira tarefa</h2>
+          <p>Tudo o que você escrever fica salvo neste aparelho — com ou sem sinal — e é enviado sozinho quando a conexão voltar.</p>
+          <button type="button" class="btn btn-primary" (click)="focusComposer()">Escrever tarefa</button>
+        }
+      </div>
+    }
+  </main>
+</div>
+
+@if (editingId(); as id) {
+  <app-task-editor [todoId]="id" (closed)="editingId.set(null)" />
+}
