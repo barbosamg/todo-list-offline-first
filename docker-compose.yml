@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: todo
       POSTGRES_DB: todo
     ports:
-      - "5432:5432"
+      # porta alta no host para não colidir com um PostgreSQL já instalado na máquina
+      - "55432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
