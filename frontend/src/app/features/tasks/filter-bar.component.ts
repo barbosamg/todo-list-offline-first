@@ -22,23 +22,25 @@ import { TaskListState } from './task-list-state';
       />
     </div>
 
-    <div class="group" role="group" aria-label="Filtrar por status">
-      @for (s of statuses; track s.value) {
-        <button type="button" [attr.aria-pressed]="state.status() === s.value" (click)="state.status.set(s.value)">{{ s.label }}</button>
+    <div class="chips">
+      <div class="group" role="group" aria-label="Filtrar por status">
+        @for (s of statuses; track s.value) {
+          <button type="button" [attr.aria-pressed]="state.status() === s.value" (click)="state.status.set(s.value)">{{ s.label }}</button>
+        }
+      </div>
+
+      <div class="group" role="group" aria-label="Filtrar por prioridade">
+        @for (p of priorities; track p.value) {
+          <button type="button" [attr.aria-pressed]="state.priority() === p.value" (click)="state.priority.set(p.value)">{{ p.label }}</button>
+        }
+      </div>
+
+      @if (state.hasFilters()) {
+        <button type="button" class="btn btn-ghost clear" (click)="state.clearFilters()">
+          <app-icon name="x" [size]="16" />Limpar
+        </button>
       }
     </div>
-
-    <div class="group" role="group" aria-label="Filtrar por prioridade">
-      @for (p of priorities; track p.value) {
-        <button type="button" [attr.aria-pressed]="state.priority() === p.value" (click)="state.priority.set(p.value)">{{ p.label }}</button>
-      }
-    </div>
-
-    @if (state.hasFilters()) {
-      <button type="button" class="btn btn-ghost clear" (click)="state.clearFilters()">
-        <app-icon name="x" [size]="16" />Limpar filtros
-      </button>
-    }
   `,
   styles: `
     :host {
@@ -60,6 +62,31 @@ import { TaskListState } from './task-list-state';
     }
     .search .input {
       padding-left: 38px;
+    }
+    .chips {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    @media (max-width: 720px) {
+      /* celular: busca em linha própria; filtros numa única faixa rolável */
+      .search {
+        flex-basis: 100%;
+      }
+      .chips {
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+      }
+      .chips::-webkit-scrollbar {
+        display: none;
+      }
+      .group,
+      .clear {
+        flex: none;
+      }
     }
     .group {
       display: inline-flex;

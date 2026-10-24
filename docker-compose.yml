@@ -1,5 +1,8 @@
 name: todo-offline
 
+# Subir só o banco (para desenvolver com `dotnet run` + `ng serve`):  docker compose up -d db
+# Subir tudo (API + consumidor + frontend):                           docker compose up --build
+
 services:
   db:
     image: postgres:17-alpine
@@ -17,6 +20,34 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
+  api:
+    build: ./backend/src/TodoOffline.Api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=todo;Username=todo;Password=todo
+      Webhooks__Subscribers__0__Name: external-consumer
+      Webhooks__Subscribers__0__Url: http://consumer:8080/webhooks/todos
+      Webhooks__Subscribers__0__Secret: dev-shared-secret
+      Cors__Origins__0: http://localhost:8080
+    ports:
+      - "5080:8080"   # API + documentação em http://localhost:5080/scalar
+
+  consumer:
+    build: ./consumer/ExternalConsumer
+    environment:
+      Webhook__Secret: dev-shared-secret
+    ports:
+      - "5100:8080"   # painel do consumidor externo simulado
+
+  web:
+    build: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "8080:80"     # aplicação (build de produção com service worker)
 
 volumes:
   pgdata:

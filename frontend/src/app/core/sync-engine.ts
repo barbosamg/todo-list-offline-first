@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { TimeoutError, firstValueFrom, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
 import { OutboxOp, SyncResponse, WireMutation } from './models';
 import { NoticeService } from './notice.service';
@@ -10,6 +10,7 @@ export type SyncState = 'offline' | 'syncing' | 'synced' | 'error' | 'auth';
 
 const BATCH = 200;
 const POLL_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 const FIELD_LABEL: Record<string, string> = {
   title: 'título',
   description: 'descrição',
@@ -151,8 +152,12 @@ export class SyncEngine {
     for (;;) {
       const batch = this.repo.takeBatch(BATCH);
       try {
+        // Timeout próprio: "lie-fi" (conectado mas sem tráfego) não pode deixar a interface presa em "Sincronizando".
+        // Reenviar depois é seguro: o servidor trata o mesmo lote de forma idempotente.
         const res = await firstValueFrom(
-          this.http.post<SyncResponse>('/api/sync', { cursor: this.repo.cursor, mutations: batch.map(toWire) }),
+          this.http
+            .post<SyncResponse>('/api/sync', { cursor: this.repo.cursor, mutations: batch.map(toWire) })
+            .pipe(timeout(REQUEST_TIMEOUT_MS)),
         );
         await this.repo.commit(batch, res);
         this.report(res);
@@ -189,6 +194,7 @@ function toWire(op: OutboxOp): WireMutation {
 }
 
 function classify(e: unknown): 'offline' | 'error' | 'auth' {
+  if (e instanceof TimeoutError) return 'offline';
   if (e instanceof HttpErrorResponse) {
     // sem rota até o servidor: offline real, "lie-fi" ou proxy/gateway sem backend (502/503/504)
     if (e.status === 0 || e.status === 502 || e.status === 503 || e.status === 504) return 'offline';

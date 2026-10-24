@@ -26,7 +26,7 @@ import { TaskListState } from './task-list-state';
         [value]="text()"
         (input)="text.set(box.value)"
         (keydown.enter)="submit($event, box.value)"
-        placeholder="Nova tarefa… escreva “urgente” para fixar no topo"
+        placeholder="Nova tarefa…"
         aria-label="Título da nova tarefa"
         enterkeyhint="done"
       />
