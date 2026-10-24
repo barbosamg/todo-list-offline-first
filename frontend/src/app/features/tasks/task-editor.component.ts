@@ -33,8 +33,8 @@ import { TaskListState } from './task-list-state';
         </div>
 
         @if (willBeUrgent()) {
-          <p class="hint" [class.on]="willBeUrgent()">
-            <app-icon name="zap" [size]="16" [stroke]="2.4" />
+          <p class="hint">
+            <app-icon name="alert" [size]="16" />
             <span>Contém “urgente” — fica fixada no topo da lista.</span>
           </p>
         }

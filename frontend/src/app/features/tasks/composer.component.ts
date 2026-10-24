@@ -61,8 +61,8 @@ import { TaskListState } from './task-list-state';
         box-shadow 0.12s;
     }
     .composer:focus-within {
-      border-color: var(--ink);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 16%, transparent);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgb(47 93 143 / 16%);
       color: var(--ink);
     }
     .text {
@@ -94,7 +94,7 @@ import { TaskListState } from './task-list-state';
     }
     .add {
       min-height: 40px;
-      border-radius: 13px;
+      border-radius: var(--r-md);
     }
     @media (max-width: 720px) {
       .add {

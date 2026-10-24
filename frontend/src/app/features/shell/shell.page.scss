@@ -12,11 +12,11 @@
 main {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   width: 100%;
-  max-width: 900px;
+  max-width: 880px;
   margin: 0 auto;
-  padding: 28px 28px 80px;
+  padding: 26px 28px 80px;
 }
 
 .top {
@@ -25,20 +25,16 @@ main {
   gap: 14px;
 }
 .heading h1 {
-  font-size: clamp(34px, 5vw, 48px);
-  line-height: 0.95;
-  letter-spacing: 0.01em;
+  font-size: 26px;
+  line-height: 1.2;
 }
 .heading p {
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--ink-2);
 }
 .urg {
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--marker);
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--urgent);
+  font-weight: 500;
 }
 .menu {
   display: none;
@@ -46,14 +42,17 @@ main {
 
 .block {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 .sec {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 6px 0 0;
-  font-size: 15px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-2);
 }
 .sec::after {
@@ -65,37 +64,34 @@ main {
 .sec .count {
   order: 2;
   color: var(--ink-3);
+  font-weight: 400;
 }
 .sec.urgent {
-  color: var(--ink);
-}
-.sec.urgent .mk {
-  padding: 1px 10px 0;
-  background: var(--marker);
-  border-radius: 3px;
-  transform: rotate(-1.2deg);
+  color: var(--urgent);
 }
 
 .list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .empty {
   display: grid;
   justify-items: center;
   gap: 8px;
-  max-width: 420px;
-  margin: 40px auto;
-  padding: 36px 24px;
+  max-width: 440px;
+  margin: 36px auto;
+  padding: 32px 24px;
   text-align: center;
   color: var(--ink-2);
-  border: 1.5px dashed var(--line-strong);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
 }
 .empty h2 {
   margin-top: 6px;
-  font-size: 18px;
+  font-size: 17px;
+  font-weight: 600;
   color: var(--ink);
 }
 .empty .btn {
@@ -118,10 +114,10 @@ main {
     position: fixed;
     inset: 0;
     z-index: 44;
-    background: rgb(12 26 43 / 45%);
+    background: rgb(30 42 56 / 45%);
   }
   main {
-    padding: 18px 14px 120px;
+    padding: 16px 14px 120px;
     gap: 14px;
   }
   /* celular: o campo de adicionar fica ao alcance do polegar */
@@ -132,6 +128,7 @@ main {
     right: 0;
     bottom: 0;
     padding: 10px 12px calc(10px + var(--safe-bottom));
-    background: linear-gradient(transparent, var(--paper) 28%);
+    background: var(--paper);
+    border-top: 1px solid var(--line-strong);
   }
 }

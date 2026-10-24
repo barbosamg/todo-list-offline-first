@@ -1,42 +1,43 @@
 /*
   Campo — sistema visual
-  Ideia: instrumento de campo. Papel azul-concreto, tinta marinho e um único gesto de cor — o
-  marca-texto lima, reservado às tarefas urgentes. A conexão é tratada como instrumento (régua
-  de sincronização, barras de sinal para prioridade), não como detalhe escondido.
+  Paleta sóbria de ferramenta corporativa: cinzas-ardósia neutros, um azul-aço para ações e
+  cores de estado discretas e escuras (legíveis, sem brilho). A única cor "quente" fixa é o
+  tijolo, usado para urgência.
 */
 
 :root {
-  --paper: #edf0f4;
+  --paper: #f1f3f6;
   --surface: #ffffff;
-  --surface-2: #f5f7fa;
-  --ink: #0c1a2b;
-  --ink-2: #44546a;
-  --ink-3: #6f7d90;
-  --line: #dae0e8;
-  --line-strong: #c3ccd8;
+  --surface-2: #f6f7f9;
+  --ink: #1e2a38;
+  --ink-2: #4a5a6b;
+  --ink-3: #6e7d8f;
+  --line: #e1e6ec;
+  --line-strong: #cbd3dd;
 
-  --marker: #d4f34a;
-  --marker-soft: #ecf9a8;
+  --brand: #2c3e55; /* barras, menu lateral, botão primário */
+  --brand-hover: #38506d;
+  --accent: #2f5d8f; /* foco, seleção, "sincronizando" */
 
-  --ok: #0b8f62;
-  --sync: #2b5cff;
-  --warn: #f2b33d;
-  --warn-ink: #4a3200;
-  --bad: #d9363e;
-  --focus: #2b5cff;
+  --ok: #3f7f5f;
+  --offline: #8f5b00;
+  --bad: #a23b3b;
 
-  --f-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
-  --f-body: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
-  --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --urgent: #a8412f;
+  --urgent-bg: #fbeeeb;
+  --urgent-line: #efcdc6;
 
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
-  --shadow-1: 0 1px 2px rgb(12 26 43 / 6%), 0 1px 1px rgb(12 26 43 / 4%);
-  --shadow-2: 0 10px 30px -8px rgb(12 26 43 / 22%), 0 2px 6px rgb(12 26 43 / 8%);
+  --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --shadow-1: 0 1px 2px rgb(30 42 56 / 7%);
+  --shadow-2: 0 8px 24px rgb(30 42 56 / 18%);
 
   --rail-h: 40px;
-  --sidebar-w: 280px;
+  --sidebar-w: 264px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   color-scheme: light;
@@ -86,29 +87,25 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::selection {
-  background: var(--marker);
+  background: #cfdcec;
   color: var(--ink);
 }
 
-/* tipografia de sinalização: condensada, forte, em caixa alta — usada com parcimônia */
+/* títulos e rótulos: peso médio, sem caixa alta ruidosa */
 .display {
-  font-family: var(--f-display);
-  font-stretch: 72%;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .mono {
   font-family: var(--f-mono);
   font-size: 12px;
-  letter-spacing: 0.01em;
 }
 
 .sr-only {
@@ -126,55 +123,52 @@ button {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 38px;
+  padding: 0 14px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   background: var(--surface);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
   transition:
     background 0.12s,
-    border-color 0.12s,
-    transform 0.06s;
+    border-color 0.12s;
 }
 .btn:hover {
   border-color: var(--ink-3);
-}
-.btn:active {
-  transform: translateY(1px);
+  background: var(--surface-2);
 }
 .btn[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 .btn-primary:hover {
-  background: #17304d;
-  border-color: #17304d;
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
 }
 .btn-ghost {
   background: transparent;
   border-color: transparent;
 }
 .btn-ghost:hover {
-  background: rgb(12 26 43 / 6%);
+  background: rgb(30 42 56 / 7%);
   border-color: transparent;
 }
 .btn-danger {
   color: var(--bad);
-  border-color: color-mix(in srgb, var(--bad) 40%, white);
+  border-color: #dcb5b5;
 }
 .btn-danger:hover {
-  background: color-mix(in srgb, var(--bad) 8%, white);
+  background: #faf0f0;
   border-color: var(--bad);
 }
 .btn-icon {
-  width: 40px;
+  width: 38px;
   padding: 0;
 }
 
@@ -186,15 +180,13 @@ button {
 .field > label,
 .label {
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 600;
   color: var(--ink-2);
 }
 .input {
   width: 100%;
-  min-height: 42px;
-  padding: 9px 12px;
+  min-height: 40px;
+  padding: 8px 12px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   background: var(--surface);
@@ -210,8 +202,8 @@ button {
 }
 .input:focus {
   outline: none;
-  border-color: var(--focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(47 93 143 / 18%);
 }
 textarea.input {
   resize: vertical;
@@ -228,21 +220,21 @@ textarea.input {
   border: 1px solid var(--line);
 }
 .seg button {
-  min-height: 32px;
+  min-height: 30px;
   padding: 0 12px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   background: transparent;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink-2);
 }
 .seg button[aria-pressed='true'] {
-  background: var(--ink);
+  background: var(--brand);
   color: #fff;
 }
 .seg button:not([aria-pressed='true']):hover {
-  background: rgb(12 26 43 / 7%);
+  background: rgb(30 42 56 / 7%);
 }
 
 @media (prefers-reduced-motion: reduce) {

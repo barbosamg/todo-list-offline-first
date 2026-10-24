@@ -1,29 +1,26 @@
 :host {
-  --rail-bg: var(--ink);
+  --rail-bg: var(--brand);
   --rail-fg: #fff;
-  --rail-accent: #3ddc9f;
+  --rail-dot: #7cc6a0;
   display: block;
   position: sticky;
   top: 0;
   z-index: 40;
   background: var(--rail-bg);
   color: var(--rail-fg);
-  transition: background 0.25s;
+  transition: background 0.2s;
 }
 
+/* estados: cores sólidas e discretas, todas com contraste AA contra o texto branco */
 :host([data-state='offline']) {
-  --rail-bg: var(--warn);
-  --rail-fg: var(--warn-ink);
-  --rail-accent: var(--warn-ink);
+  --rail-bg: var(--offline);
 }
 :host([data-state='syncing']) {
-  --rail-bg: var(--sync);
-  --rail-accent: #fff;
+  --rail-bg: var(--accent);
 }
 :host([data-state='error']),
 :host([data-state='auth']) {
   --rail-bg: var(--bad);
-  --rail-accent: #fff;
 }
 
 .rail {
@@ -33,6 +30,7 @@
   gap: 16px;
   height: var(--rail-h);
   padding: 0 16px;
+  font-size: 13px;
 }
 
 .state {
@@ -42,29 +40,25 @@
   min-width: 0;
 }
 .state strong {
-  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
 }
 .count {
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 18%);
+  background: rgb(255 255 255 / 16%);
   white-space: nowrap;
-}
-:host([data-state='offline']) .count {
-  background: rgb(74 50 0 / 14%);
 }
 
 .dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--rail-accent);
-  box-shadow: 0 0 0 3px rgb(61 220 159 / 25%);
+  background: var(--rail-dot);
 }
 
 .spin {
-  animation: spin 1s linear infinite;
+  animation: spin 1.1s linear infinite;
 }
 @keyframes spin {
   to {
@@ -82,33 +76,14 @@
 }
 .ticks i {
   flex: none;
-  width: 3px;
-  height: 16px;
-  border-radius: 2px;
+  width: 2px;
+  height: 14px;
   background: var(--rail-fg);
-  opacity: 0.85;
-  animation: tick-in 0.25s ease-out both;
-}
-:host([data-state='syncing']) .ticks i {
-  animation:
-    tick-in 0.25s ease-out both,
-    wave 0.9s ease-in-out infinite;
+  opacity: 0.8;
 }
 .more {
   margin-left: 4px;
   opacity: 0.85;
-}
-@keyframes tick-in {
-  from {
-    transform: scaleY(0.2);
-    opacity: 0;
-  }
-}
-@keyframes wave {
-  50% {
-    transform: scaleY(0.45);
-    opacity: 0.5;
-  }
 }
 
 .right {
@@ -124,21 +99,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--rail-fg) 45%, transparent);
-  border-radius: 999px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--rail-fg);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   white-space: nowrap;
 }
 .act:hover:not([disabled]) {
-  background: rgb(255 255 255 / 16%);
-}
-:host([data-state='offline']) .act:hover:not([disabled]) {
-  background: rgb(74 50 0 / 12%);
+  background: rgb(255 255 255 / 14%);
 }
 .act[disabled] {
   opacity: 0.6;
@@ -148,26 +120,10 @@
   outline-color: #fff;
 }
 
-/* faixa inferior: listras de alerta offline · "lançadeira" enquanto sincroniza */
+/* a faixa inferior só existe como linha de acabamento */
 .edge {
-  height: 3px;
-  background: transparent;
-}
-:host([data-state='offline']) .edge {
-  background: repeating-linear-gradient(-45deg, var(--warn-ink) 0 8px, transparent 8px 16px);
-  opacity: 0.55;
-}
-:host([data-state='syncing']) .edge {
-  background: linear-gradient(90deg, transparent, #fff, transparent) 0 0 / 40% 100% no-repeat;
-  animation: shuttle 1.1s ease-in-out infinite;
-}
-@keyframes shuttle {
-  from {
-    background-position: -40% 0;
-  }
-  to {
-    background-position: 140% 0;
-  }
+  height: 1px;
+  background: rgb(0 0 0 / 22%);
 }
 
 @media (max-width: 720px) {
@@ -187,8 +143,5 @@
   :host([data-state='auth']) .act {
     width: auto;
     padding: 0 10px;
-  }
-  .state strong {
-    font-size: 14px;
   }
 }

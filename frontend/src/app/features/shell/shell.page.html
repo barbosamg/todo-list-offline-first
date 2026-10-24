@@ -30,8 +30,8 @@
 
     @if (state.urgent().length) {
       <section class="block" aria-labelledby="h-urgent">
-        <h2 id="h-urgent" class="sec urgent display">
-          <span class="mk">Urgentes</span>
+        <h2 id="h-urgent" class="sec urgent">
+          <span>Urgentes</span>
           <span class="count mono">{{ state.urgent().length }}</span>
         </h2>
         <div class="list">
@@ -50,7 +50,7 @@
 
     @if (state.others().length) {
       <section class="block" aria-labelledby="h-others">
-        <h2 id="h-others" class="sec display">
+        <h2 id="h-others" class="sec">
           <span>{{ state.urgent().length ? 'Demais tarefas' : 'Tarefas' }}</span>
           <span class="count mono">{{ state.others().length }}</span>
         </h2>

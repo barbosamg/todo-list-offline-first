@@ -8,8 +8,7 @@
 .backdrop {
   position: absolute;
   inset: 0;
-  background: rgb(12 26 43 / 42%);
-  animation: fade 0.18s ease-out;
+  background: rgb(30 42 56 / 40%);
 }
 
 .sheet {
@@ -22,7 +21,7 @@
   flex-direction: column;
   background: var(--surface);
   box-shadow: var(--shadow-2);
-  animation: slide-in 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: slide-in 0.18s ease-out;
 }
 
 header {
@@ -33,7 +32,7 @@ header {
   border-bottom: 1px solid var(--line);
 }
 header h2 {
-  font-size: 22px;
+  font-size: 18px;
 }
 
 form {
@@ -62,7 +61,9 @@ form {
   gap: 8px;
 }
 .prio button[aria-pressed='true'] app-priority-bars {
-  filter: invert(1) brightness(2);
+  --bar-on: #fff;
+  --bar-off: rgb(255 255 255 / 35%);
+  --bar-high: #fff;
 }
 
 .hint {
@@ -71,11 +72,11 @@ form {
   gap: 8px;
   padding: 8px 12px;
   border-radius: var(--r-sm);
-  background: var(--marker-soft);
-  border: 1px solid var(--marker);
+  background: var(--urgent-bg);
+  border: 1px solid var(--urgent-line);
+  color: var(--urgent);
   font-size: 13px;
-  font-weight: 600;
-  animation: fade 0.2s;
+  font-weight: 500;
 }
 
 .done {
@@ -88,7 +89,7 @@ form {
 .done input {
   width: 20px;
   height: 20px;
-  accent-color: var(--ink);
+  accent-color: var(--brand);
 }
 
 .unsynced {
@@ -97,9 +98,10 @@ form {
   gap: 8px;
   padding: 8px 12px;
   border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--warn) 25%, white);
+  background: #f6efe0;
+  border: 1px solid #e6d6b0;
   font-size: 13px;
-  color: var(--warn-ink);
+  color: #5e3d00;
 }
 
 footer {
@@ -137,7 +139,7 @@ footer {
     top: auto;
     width: 100%;
     max-height: 92dvh;
-    border-radius: 22px 22px 0 0;
+    border-radius: 12px 12px 0 0;
     animation-name: sheet-up;
   }
   .row2 {

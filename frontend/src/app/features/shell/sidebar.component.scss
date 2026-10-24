@@ -1,38 +1,39 @@
 :host {
   position: sticky;
-  top: calc(var(--rail-h) + 3px);
-  height: calc(100dvh - var(--rail-h) - 3px);
+  top: calc(var(--rail-h) + 1px);
+  height: calc(100dvh - var(--rail-h) - 1px);
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px 14px 14px;
-  background: var(--ink);
-  color: #dbe3ee;
+  gap: 16px;
+  padding: 18px 12px 12px;
+  background: #243346;
+  color: #cfd8e3;
   overflow-y: auto;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 8px 4px;
+  gap: 10px;
+  padding: 0 8px 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
 }
 .brand img {
-  border-radius: 9px;
+  border-radius: 6px;
 }
 .brand strong {
   display: block;
-  font-size: 26px;
-  line-height: 1;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.1;
   color: #fff;
-  letter-spacing: 0.04em;
 }
 .brand small {
   display: block;
-  margin-top: 3px;
-  font-size: 12px;
-  line-height: 1.25;
-  color: #8fa1b8;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: #93a3b6;
 }
 
 nav {
@@ -43,29 +44,32 @@ nav {
 }
 .group {
   margin: 16px 10px 6px;
-  font-size: 13px;
-  color: #7f92aa;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8697ab;
 }
 
 .item {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
+  min-height: 38px;
   padding: 0 10px;
   border: 0;
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   background: transparent;
   color: inherit;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
 }
 .item:hover {
-  background: rgb(255 255 255 / 8%);
+  background: rgb(255 255 255 / 7%);
 }
 .item.active {
-  background: #fff;
-  color: var(--ink);
+  background: rgb(255 255 255 / 14%);
+  color: #fff;
 }
 .name {
   flex: 1;
@@ -75,27 +79,28 @@ nav {
   white-space: nowrap;
 }
 .n {
-  color: #8fa1b8;
+  color: #93a3b6;
 }
 .item.active .n {
-  color: var(--ink-2);
+  color: #dbe3ec;
 }
 .u {
   padding: 0 6px;
-  border-radius: 999px;
-  background: var(--marker);
-  color: var(--ink);
-  font-weight: 600;
+  border-radius: var(--r-sm);
+  background: var(--urgent);
+  color: #fff;
+  font-weight: 500;
 }
 
 .tip {
-  margin: 16px 10px;
-  font-size: 13px;
+  margin: 14px 10px;
+  font-size: 12.5px;
   line-height: 1.5;
-  color: #8fa1b8;
+  color: #93a3b6;
 }
 .tip strong {
   color: #fff;
+  font-weight: 600;
 }
 
 .me {
@@ -103,7 +108,7 @@ nav {
   align-items: center;
   gap: 8px;
   padding: 12px 8px 0;
-  border-top: 1px solid rgb(255 255 255 / 12%);
+  border-top: 1px solid rgb(255 255 255 / 10%);
 }
 .who {
   flex: 1;
@@ -124,14 +129,15 @@ nav {
 }
 .who strong {
   color: #fff;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 .who small {
-  color: #8fa1b8;
+  color: #93a3b6;
   font-size: 12px;
 }
 .me .btn {
-  color: #dbe3ee;
+  color: #cfd8e3;
 }
 .me .btn:hover {
   background: rgb(255 255 255 / 10%);
@@ -142,11 +148,11 @@ nav {
   :host {
     position: fixed;
     z-index: 45;
-    top: calc(var(--rail-h) + 3px);
+    top: calc(var(--rail-h) + 1px);
     left: 0;
-    width: min(300px, 86vw);
+    width: min(290px, 86vw);
     transform: translateX(-102%);
-    transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.2s ease-out;
     box-shadow: var(--shadow-2);
   }
   :host(.open) {

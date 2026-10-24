@@ -10,7 +10,7 @@ import { IconComponent } from './icon.component';
     <div class="stack" role="region" aria-label="Avisos" aria-live="polite">
       @for (n of notices.notices(); track n.id) {
         <div class="toast" [class]="n.kind" role="status">
-          <app-icon [name]="n.kind === 'success' ? 'check' : n.kind === 'info' ? 'zap' : 'alert'" [size]="18" />
+          <app-icon [name]="n.kind === 'success' ? 'check' : n.kind === 'info' ? 'info' : 'alert'" [size]="18" />
           <span>{{ n.text }}</span>
           <button type="button" class="x" (click)="notices.dismiss(n.id)" aria-label="Dispensar aviso">
             <app-icon name="x" [size]="16" />
@@ -36,40 +36,29 @@ import { IconComponent } from './icon.component';
       grid-template-columns: auto 1fr auto;
       gap: 10px;
       align-items: start;
-      padding: 12px 12px 12px 14px;
+      padding: 11px 10px 11px 14px;
       border-radius: var(--r-md);
-      background: var(--ink);
+      background: var(--brand);
       color: #fff;
       box-shadow: var(--shadow-2);
       font-size: 14px;
-      animation: in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
     }
     .toast.warn {
-      background: var(--warn);
-      color: var(--warn-ink);
+      background: var(--offline);
     }
     .toast.error {
       background: var(--bad);
-    }
-    .toast.success app-icon {
-      color: var(--marker);
     }
     .x {
       border: 0;
       background: transparent;
       color: inherit;
-      opacity: 0.7;
+      opacity: 0.75;
       padding: 2px;
       line-height: 0;
     }
     .x:hover {
       opacity: 1;
-    }
-    @keyframes in {
-      from {
-        transform: translateY(12px);
-        opacity: 0;
-      }
     }
   `,
 })

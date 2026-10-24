@@ -100,14 +100,14 @@ import { TaskListState } from './task-list-state';
       min-height: 34px;
       padding: 0 12px;
       border: 0;
-      border-radius: 9px;
+      border-radius: var(--r-sm);
       background: transparent;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--ink-2);
     }
     .group button[aria-pressed='true'] {
-      background: var(--ink);
+      background: var(--brand);
       color: #fff;
     }
     .group button:not([aria-pressed='true']):hover {

@@ -33,7 +33,7 @@ const MAX_TICKS = 24;
             <app-icon name="alert" [size]="16" [stroke]="2.4" />
           }
         }
-        <strong class="display">{{ headline() }}</strong>
+        <strong>{{ headline() }}</strong>
         @if (engine.pending() > 0) {
           <span class="count mono">{{ engine.pending() }} pendente{{ engine.pending() === 1 ? '' : 's' }}</span>
         }

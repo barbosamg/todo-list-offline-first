@@ -22,13 +22,13 @@ import { PRIORITY_LABEL, PRIORITY_RANK, Priority } from '../core/models';
     i {
       width: 4px;
       border-radius: 1px;
-      background: var(--line-strong);
+      background: var(--bar-off, var(--line-strong));
     }
     i.on {
-      background: var(--ink-2);
+      background: var(--bar-on, var(--ink-2));
     }
     .high i.on {
-      background: var(--bad);
+      background: var(--bar-high, var(--urgent));
     }
   `,
 })

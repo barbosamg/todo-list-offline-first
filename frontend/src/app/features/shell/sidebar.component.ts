@@ -14,10 +14,10 @@ import { TaskListState } from '../tasks/task-list-state';
   host: { '[class.open]': 'open()' },
   template: `
     <div class="brand">
-      <img src="favicon.svg" alt="" width="34" height="34" />
+      <img src="favicon.svg" alt="" width="30" height="30" />
       <div>
-        <strong class="display">Campo</strong>
-        <small>tarefas que não dependem de sinal</small>
+        <strong>Campo</strong>
+        <small>Tarefas com ou sem sinal</small>
       </div>
     </div>
 
@@ -29,7 +29,7 @@ import { TaskListState } from '../tasks/task-list-state';
       </button>
 
       @if (state.lists().length) {
-        <p class="group display">Listas</p>
+        <p class="group">Listas</p>
       }
       @for (l of state.lists(); track l.name) {
         <button type="button" class="item" [class.active]="state.category() === l.name" (click)="select(l.name)">

@@ -24,17 +24,11 @@ import { PriorityBarsComponent } from '../../ui/priority-bars.component';
     </button>
 
     <button type="button" class="body" (click)="open.emit(todo().id)" [attr.aria-label]="'Editar: ' + todo().title">
-      <span class="title">
-        @if (todo().isUrgent) {
-          <mark>{{ todo().title }}</mark>
-        } @else {
-          {{ todo().title }}
-        }
-      </span>
+      <span class="title">{{ todo().title }}</span>
       @if (hasMeta()) {
         <span class="meta">
           @if (todo().isUrgent) {
-            <span class="tag urgent-tag"><app-icon name="zap" [size]="12" [stroke]="2.6" />Urgente</span>
+            <span class="tag urgent-tag"><app-icon name="alert" [size]="12" [stroke]="2.4" />Urgente</span>
           }
           @if (todo().category) {
             <span class="tag"><app-icon name="hash" [size]="12" />{{ todo().category }}</span>
@@ -53,8 +47,8 @@ import { PriorityBarsComponent } from '../../ui/priority-bars.component';
 
     <div class="end">
       @if (pending()) {
-        <span class="unsynced" title="Alteração salva no aparelho, ainda não enviada" aria-label="Aguardando sincronização">
-          <app-icon name="cloudUp" [size]="14" />
+        <span class="unsynced" title="Alteração salva no aparelho, ainda não enviada" role="img" aria-label="Aguardando sincronização">
+          <app-icon name="cloudUp" [size]="16" />
         </span>
       }
       <app-priority-bars [priority]="todo().priority" />
