@@ -35,20 +35,26 @@ app.MapPost("/webhooks/todos", async (HttpRequest request, ConsumerState state, 
         return Results.Unauthorized();
     }
 
-    // 2) falha injetada (para demonstrar retry/backoff no produtor)
-    if (state.TryConsumeFailure())
-    {
-        state.Log(new(DateTimeOffset.UtcNow, eventId, type, null, 0, attempt, "falha-injetada", null));
-        log.LogWarning("Falha injetada ao receber {EventId} (tentativa {Attempt})", eventId, attempt);
-        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-    }
-
-    using var doc = JsonDocument.Parse(body);
+    // O corpo já está autenticado: lê o evento antes de qualquer decisão, para o log mostrar de QUAL tarefa é cada tentativa.
+    JsonDocument doc;
+    try { doc = JsonDocument.Parse(body); }
+    catch (JsonException) { return Results.BadRequest(new { error = "JSON inválido" }); }
+    using var disposable = doc;
     var root = doc.RootElement;
     var aggregateId = root.GetProperty("aggregate").GetProperty("id").GetGuid();
     var version = root.GetProperty("aggregate").GetProperty("version").GetInt64();
+    // o tipo vem do corpo assinado (os headers são só uma conveniência de roteamento)
+    type = root.TryGetProperty("type", out var typeProp) ? typeProp.GetString() ?? type : type;
     var data = root.GetProperty("data");
     var title = data.TryGetProperty("title", out var t) ? t.GetString() : null;
+
+    // 2) falha injetada (para demonstrar retry/backoff no produtor)
+    if (state.TryConsumeFailure())
+    {
+        state.Log(new(DateTimeOffset.UtcNow, eventId, type, aggregateId, version, attempt, "falha-injetada", title));
+        log.LogWarning("Falha injetada ao receber {EventId} (tentativa {Attempt})", eventId, attempt);
+        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
 
     // 3) idempotência: at-least-once => o mesmo evento pode chegar mais de uma vez
     if (!state.SeenEvents.TryAdd(eventId, true))
@@ -127,3 +133,5 @@ public sealed class ConsumerState
         Projection.Clear();
     }
 }
+
+public partial class Program;
