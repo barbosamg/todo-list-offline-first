@@ -32,7 +32,7 @@ public sealed class PostgresCollection : ICollectionFixture<PostgresFixture>
 
 public sealed class FakeWebhookSender : IWebhookSender
 {
-    public record Call(Guid EventId, string Type, Guid AggregateId, long Version, int Attempt, string Signature, string Body);
+    public record Call(Guid EventId, string Type, Guid AggregateId, long Version, int Attempt, string Signature, string Body, string Subscriber);
 
     private readonly object _gate = new();
     public List<Call> Calls { get; } = [];
@@ -42,7 +42,7 @@ public sealed class FakeWebhookSender : IWebhookSender
 
     public Task<(bool Ok, string? Error)> SendAsync(WebhookSubscription s, OutboxEvent ev, int attempt, CancellationToken ct)
     {
-        var call = new Call(ev.Id, ev.Type, ev.AggregateId, ev.AggregateVersion, attempt, WebhookSender.Sign(s.Secret, ev.Payload), ev.Payload);
+        var call = new Call(ev.Id, ev.Type, ev.AggregateId, ev.AggregateVersion, attempt, WebhookSender.Sign(s.Secret, ev.Payload), ev.Payload, s.Name);
         lock (_gate) Calls.Add(call);
         return Task.FromResult(Fail(call) ? (false, "HTTP 503") : (true, (string?)null));
     }
@@ -53,12 +53,14 @@ public sealed class FakeWebhookSender : IWebhookSender
     }
 }
 
-public sealed class ApiFactory(string containerConnectionString) : WebApplicationFactory<Program>
+public sealed class ApiFactory(string containerConnectionString, IDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
 {
     // Um banco por factory (a migration cria o banco): testes não enxergam a fila de outbox uns dos outros.
     private readonly string connectionString = new Npgsql.NpgsqlConnectionStringBuilder(containerConnectionString)
     {
         Database = $"todo_test_{Guid.NewGuid():N}",
+        MaxPoolSize = 6,
+        Timeout = 30,
     }.ConnectionString;
 
     // Parte da hora real: a validação do JWT usa o relógio do sistema, então tokens emitidos no "passado" já nasceriam expirados.
@@ -72,6 +74,7 @@ public sealed class ApiFactory(string containerConnectionString) : WebApplicatio
         builder.UseSetting("Webhooks:Subscribers:0:Name", "test-consumer");
         builder.UseSetting("Webhooks:Subscribers:0:Url", "http://consumer.test/webhooks");
         builder.UseSetting("Webhooks:Subscribers:0:Secret", "test-secret");
+        foreach (var (key, value) in settings ?? new Dictionary<string, string?>()) builder.UseSetting(key, value);
 
         builder.ConfigureServices(services =>
         {
@@ -82,6 +85,12 @@ public sealed class ApiFactory(string containerConnectionString) : WebApplicatio
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(Clock);
         });
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing) Npgsql.NpgsqlConnection.ClearAllPools();
     }
 
     public OutboxDispatcher CreateDispatcher(WebhookOptions? options = null) => new(
