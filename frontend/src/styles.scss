@@ -1,0 +1,257 @@
+/*
+  Campo — sistema visual
+  Ideia: instrumento de campo. Papel azul-concreto, tinta marinho e um único gesto de cor — o
+  marca-texto lima, reservado às tarefas urgentes. A conexão é tratada como instrumento (régua
+  de sincronização, barras de sinal para prioridade), não como detalhe escondido.
+*/
+
+:root {
+  --paper: #edf0f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --ink: #0c1a2b;
+  --ink-2: #44546a;
+  --ink-3: #6f7d90;
+  --line: #dae0e8;
+  --line-strong: #c3ccd8;
+
+  --marker: #d4f34a;
+  --marker-soft: #ecf9a8;
+
+  --ok: #0b8f62;
+  --sync: #2b5cff;
+  --warn: #f2b33d;
+  --warn-ink: #4a3200;
+  --bad: #d9363e;
+  --focus: #2b5cff;
+
+  --f-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --f-body: 'Public Sans Variable', 'Public Sans', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --shadow-1: 0 1px 2px rgb(12 26 43 / 6%), 0 1px 1px rgb(12 26 43 / 4%);
+  --shadow-2: 0 10px 30px -8px rgb(12 26 43 / 22%), 0 2px 6px rgb(12 26 43 / 8%);
+
+  --rail-h: 40px;
+  --sidebar-w: 280px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--marker);
+  color: var(--ink);
+}
+
+/* tipografia de sinalização: condensada, forte, em caixa alta — usada com parcimônia */
+.display {
+  font-family: var(--f-display);
+  font-stretch: 72%;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- botões ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-weight: 600;
+  font-size: 14px;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    transform 0.06s;
+}
+.btn:hover {
+  border-color: var(--ink-3);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #17304d;
+  border-color: #17304d;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: rgb(12 26 43 / 6%);
+  border-color: transparent;
+}
+.btn-danger {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 40%, white);
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--bad) 8%, white);
+  border-color: var(--bad);
+}
+.btn-icon {
+  width: 40px;
+  padding: 0;
+}
+
+/* ---------- campos ---------- */
+.field {
+  display: grid;
+  gap: 6px;
+}
+.field > label,
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.input::placeholder {
+  color: var(--ink-3);
+}
+.input:hover {
+  border-color: var(--ink-3);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent);
+}
+textarea.input {
+  resize: vertical;
+  min-height: 84px;
+}
+
+/* controle segmentado */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.seg button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--ink);
+  color: #fff;
+}
+.seg button:not([aria-pressed='true']):hover {
+  background: rgb(12 26 43 / 7%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
