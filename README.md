@@ -26,7 +26,8 @@ flowchart LR
 
 ## Sumário
 
-1. [Como executar](#1-como-executar)
+0. [Tecnologias e versões](#0-tecnologias-e-versões)
+1. [Como executar](#1-como-executar) — Docker, modo desenvolvimento, uso no navegador, comandos úteis, problemas comuns
 2. [Decisões técnicas e trade-offs](#2-decisões-técnicas-e-trade-offs)
 3. [Premissas](#3-premissas)
 4. [Limitações e próximos passos](#4-limitações-e-próximos-passos)
@@ -36,51 +37,227 @@ flowchart LR
 
 ---
 
+## 0. Tecnologias e versões
+
+### Backend (`backend/`)
+
+| Item | Versão | Uso |
+|---|---|---|
+| .NET / ASP.NET Core | **10.0** (`net10.0`, LTS) | Minimal APIs, DI, `BackgroundService` |
+| Entity Framework Core | 10.0.13 | ORM e migrations |
+| Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.3 | provider PostgreSQL (`jsonb`; `FOR UPDATE SKIP LOCKED` via SQL) |
+| Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.13 | autenticação JWT |
+| Microsoft.AspNetCore.OpenApi + Scalar.AspNetCore | 10.0.13 / 2.18.3 | OpenAPI e documentação interativa em `/scalar` |
+| dotnet-ef (ferramenta local, `backend/dotnet-tools.json`) | 10.0.13 | criar/aplicar migrations |
+
+### Frontend (`frontend/`)
+
+| Item | Versão | Uso |
+|---|---|---|
+| Angular (core, router, forms, common) | **^22.2** | standalone components, **signals**, zoneless |
+| `@angular/service-worker` | ^22.2 | PWA: cache do *app shell* para abrir sem rede |
+| `@angular/build` / `@angular/cli` | ^22.2.4 | build (esbuild) e `ng serve` / `ng test` |
+| TypeScript | ~6.0 | linguagem |
+| RxJS | ~7.8 | HTTP e timeout |
+| `idb` | ^8.0.4 | wrapper de promessas sobre o IndexedDB (a lógica de sync é própria) |
+| `@fontsource/ibm-plex-sans` / `ibm-plex-mono` | ^5.3 | fontes empacotadas (funcionam offline) |
+| Vitest + jsdom + fake-indexeddb | ^5.0 / ^30 / ^6.2 | testes de unidade/componente |
+| Node.js | **22** (LTS) | build e testes (npm 10.9) |
+
+### Infraestrutura e imagens Docker
+
+| Serviço | Imagem | Detalhe |
+|---|---|---|
+| `db` | `postgres:17-alpine` | PostgreSQL 17, volume `pgdata`, healthcheck `pg_isready` |
+| `api` | build: `mcr.microsoft.com/dotnet/sdk:10.0` → `mcr.microsoft.com/dotnet/aspnet:10.0` | multi-stage (o `restore` fica em camada própria para aproveitar cache) |
+| `consumer` | idem `api` | consumidor externo simulado |
+| `web` | build: `node:22-alpine` → `nginx:1.27-alpine` | multi-stage; o nginx serve o build e faz proxy de `/api` |
+| Orquestração | Docker Compose v2 | `docker-compose.yml` na raiz |
+
+### Testes
+
+| Item | Versão |
+|---|---|
+| xUnit · FluentAssertions · Microsoft.NET.Test.Sdk | 2.9.3 · 7.2.0 · 17.14.1 |
+| Testcontainers.PostgreSql | 4.16.0 (PostgreSQL real e descartável) |
+| Microsoft.AspNetCore.Mvc.Testing | 10.0.13 (`WebApplicationFactory`) |
+| Vitest (via `ng test`) | ^5.0 |
+| Playwright (`@playwright/test`) | ^1.64.1, usando o **Google Chrome instalado** (`channel: 'chrome'`) |
+
+> Ambiente em que o projeto foi desenvolvido: Windows 11, Docker 29.x, .NET SDK 10.0.x, Node 22.
+
+### Estrutura do repositório
+
+```text
+todo-offline-first/
+├── docker-compose.yml          # db + api + consumer + web
+├── backend/
+│   ├── TodoOffline.sln
+│   ├── dotnet-tools.json       # dotnet-ef
+│   ├── src/TodoOffline.Api/    # API .NET
+│   │   ├── Domain/             # regras puras: TodoMerger (LWW), UrgentRule, TodoOrdering
+│   │   ├── Features/Auth/      # register/login + JWT
+│   │   ├── Features/Sync/      # POST /api/sync, GET /api/todos
+│   │   ├── Outbox/             # OutboxDispatcher, WebhookSender (HMAC), backoff
+│   │   ├── Infrastructure/     # DbContext, migrations, seed, PasswordHasher
+│   │   └── Dockerfile
+│   └── tests/TodoOffline.Tests/    # 207 testes (xUnit + PostgreSQL real)
+├── consumer/
+│   ├── ExternalConsumer/       # consumidor simulado + painel (wwwroot/index.html) + Dockerfile
+│   └── ExternalConsumer.Tests/ # 20 testes
+├── frontend/                   # Angular 22 (PWA)
+│   ├── src/app/core/           # IndexedDB, repositório, SyncEngine, merge, regra de urgentes
+│   ├── src/app/features/       # auth · shell (sidebar, régua de sync) · tasks
+│   ├── nginx.conf · ngsw-config.json · proxy.conf.json · Dockerfile
+│   └── public/                 # manifest.webmanifest + ícones
+├── e2e/                        # 102 testes Playwright contra o stack real
+├── shared/urgent-rule-cases.json   # vetores de teste compartilhados (C# e TypeScript)
+└── docs/architecture.md        # diagramas Mermaid
+```
+
+---
+
 ## 1. Como executar
 
-### Pré-requisitos
+> **Todos os comandos abaixo partem da raiz do repositório** (a pasta `todo-offline-first`, onde está o `docker-compose.yml`), salvo quando houver um `cd` explícito. Funcionam igual no PowerShell, CMD, Git Bash, macOS e Linux.
 
-- **Docker Desktop** (ou Docker Engine + Compose v2) — é só isso para rodar tudo.
-- Só para desenvolver sem Docker nos serviços: **.NET SDK 10** e **Node 22**.
+### 1.1 Pré-requisitos
 
-### Opção A — um comando (recomendada para avaliar)
+| Para | Precisa de |
+|---|---|
+| **Rodar tudo (recomendado)** | **Docker Desktop** (Windows/macOS) ou Docker Engine + Compose v2 (Linux). O Docker precisa estar **aberto e rodando**. |
+| Desenvolver sem Docker nos serviços | **.NET SDK 10**, **Node 22** (com npm) e o Docker só para o banco |
+| Rodar os testes de backend | Docker em execução (o Testcontainers sobe um PostgreSQL descartável) |
+| Rodar os testes E2E | Docker + **Google Chrome instalado** (o Playwright usa o Chrome do sistema; nada é baixado) |
+
+Conferir o ambiente:
 
 ```bash
+docker --version && docker compose version     # Compose v2 (comando "docker compose", sem hífen)
+dotnet --version                               # 10.0.x   (só para a Opção B e para os testes)
+node --version && npm --version                # v22.x    (só para a Opção B e para os testes)
+```
+
+Portas que precisam estar livres no seu computador: **8080**, **5080**, **5100**, **55432** (e **4200** na Opção B).
+
+### 1.2 Opção A — um comando (recomendada para avaliar)
+
+```bash
+git clone <url-do-repositorio> todo-offline-first
+cd todo-offline-first
 docker compose up --build
 ```
 
-Na primeira vez baixa as imagens e compila tudo (alguns minutos). Quando terminar:
+Na primeira vez baixa as imagens e compila tudo (alguns minutos). A API só inicia depois que o PostgreSQL está saudável (`healthcheck`), aplica as **migrations sozinha** e cria o usuário de teste. Quando o log da API mostrar `Now listening on: http://[::]:8080`, está pronto:
 
 | O que | URL |
 |---|---|
 | **Aplicação** (build de produção, com service worker) | http://localhost:8080 |
 | **Consumidor externo simulado** (painel ao vivo) | http://localhost:5100 |
 | API + documentação interativa (Scalar) | http://localhost:5080/scalar |
-| PostgreSQL | `localhost:55432` (usuário/senha/banco: `todo`) |
+| PostgreSQL | `localhost:55432` (usuário / senha / banco: `todo`) |
 
-Entre com **`demo@way2.dev` / `Demo@1234`** (há um botão "Preencher conta de demonstração" na tela de login) ou crie uma conta. Para parar: `docker compose down` (acrescente `-v` para apagar os dados).
+Entre com **`demo@way2.dev` / `Demo@1234`** (há um botão "Preencher conta de demonstração" na tela de login) ou crie uma conta.
+
+Comandos úteis do dia a dia:
+
+```bash
+docker compose up --build -d      # em segundo plano (libera o terminal)
+docker compose logs -f api        # acompanhar o log de um serviço (api | web | consumer | db)
+docker compose ps                 # estado e portas dos containers
+docker compose stop api web       # derruba só esses serviços (simula "servidor fora do ar")
+docker compose start api web      # sobe de novo
+docker compose restart consumer   # reinicia um serviço (zera o contador de falhas injetadas)
+docker compose down               # para e remove os containers (mantém os dados do banco)
+docker compose down -v            # idem + APAGA o volume do banco (começa do zero)
+docker compose build --no-cache   # reconstrói as imagens sem cache
+```
 
 > A porta do PostgreSQL é `55432` de propósito, para não colidir com um PostgreSQL já instalado na máquina.
 
-### Opção B — desenvolvimento (API e Angular fora do Docker)
+Acessar o banco com qualquer cliente (DBeaver, psql…): host `localhost`, porta `55432`, banco `todo`, usuário `todo`, senha `todo`. Ou direto no container:
 
 ```bash
-docker compose up -d db                                                    # só o banco
-dotnet run --project backend/src/TodoOffline.Api --urls http://localhost:5080
-dotnet run --project consumer/ExternalConsumer --urls http://localhost:5100   # outro terminal
-cd frontend && npm ci && npm start                                         # outro terminal → http://localhost:4200
+docker compose exec db psql -U todo -d todo
 ```
 
-As migrations e o usuário de teste são criados automaticamente na subida da API. Em desenvolvimento (`ng serve`) o service worker fica desligado; para testar **recarregar a página sem rede** use a Opção A (build de produção).
+### 1.3 Opção B — desenvolvimento (API e Angular fora do Docker)
 
-### Roteiro de demonstração
+Abra **três terminais**, todos na raiz do repositório (o `cd frontend` vale só para o terminal do Angular):
 
-1. **Offline.** Abra http://localhost:8080 e entre. No DevTools → *Network* → **Offline** (ou `docker compose stop api web`, ou o modo avião de um celular). A régua no topo fica **ocre: "Offline"**.
-2. **Escrita offline.** Crie, edite, conclua e exclua tarefas. Tudo aparece na hora; cada tarefa com alteração ainda não enviada mostra um ícone de nuvem e a régua conta as "N pendentes". Pode **recarregar a página** — o app abre (service worker) e as tarefas continuam lá.
+```bash
+# Terminal 1 — banco (container) + API
+docker compose up -d db
+dotnet run --project backend/src/TodoOffline.Api --urls http://localhost:5080
+
+# Terminal 2 — consumidor externo simulado
+dotnet run --project consumer/ExternalConsumer --urls http://localhost:5100
+
+# Terminal 3 — frontend (http://localhost:4200)
+cd frontend
+npm ci
+npm start
+```
+
+- A API usa o `appsettings.json` (banco em `localhost:55432`, assinante de webhook em `http://localhost:5100/webhooks/todos`), então não precisa de variável de ambiente.
+- As migrations e o usuário de teste são criados automaticamente na subida da API (`Database:AutoMigrate` e `Seed:Enabled`).
+- O `ng serve` usa o `frontend/proxy.conf.json`: `/api` é encaminhado para `http://localhost:5080`.
+- Neste modo o **service worker fica desligado**. Para testar **recarregar a página sem rede**, use a Opção A (build de produção).
+- Hot reload da API: troque `dotnet run` por `dotnet watch run --project backend/src/TodoOffline.Api --urls http://localhost:5080`.
+
+**Migrations (EF Core)** — só se for alterar o modelo de dados:
+
+```bash
+dotnet tool restore                                   # instala o dotnet-ef na versão fixada
+dotnet ef migrations add NomeDaMigration --project backend/src/TodoOffline.Api --output-dir Infrastructure/Migrations
+dotnet ef database update --project backend/src/TodoOffline.Api    # opcional: a API já aplica ao iniciar
+```
+
+### 1.4 Como usar e testar a aplicação no navegador (roteiro de demonstração)
+
+Abra **http://localhost:8080** (Chrome ou Edge recomendados) e entre com a conta demo.
+
+1. **Offline.** DevTools (`F12`) → aba *Network* → seletor de throttling → **Offline**. Alternativas: `docker compose stop api web` (derruba o servidor) ou o modo avião de um celular. A régua no topo fica **ocre: "Offline"**.
+2. **Escrita offline.** Crie, edite, conclua e exclua tarefas. Tudo aparece na hora; cada tarefa com alteração ainda não enviada mostra um ícone de nuvem e a régua conta as "N pendentes". Pode **recarregar a página** (`F5`) — o app abre (service worker) e as tarefas continuam lá. Para ver por dentro: DevTools → *Application* → *IndexedDB* → `campo:<id-do-usuário>` (stores `todos`, `outbox`, `meta`) e *Service Workers*.
 3. **Urgentes.** Crie uma tarefa com "urgente" no título ou na descrição (qualquer caixa, ex.: "URGENTE"): ela sobe ao topo na hora, com filete e etiqueta "Urgente", **mesmo offline**. Edite o texto e remova a palavra: ela volta ao lugar normal.
-4. **Reconexão.** Volte para *Online*. A régua fica **azul "Sincronizando"** e depois **"Sincronizado"**; as pendências somem.
-5. **Integração externa.** Em http://localhost:5100 os eventos (`todo.created`, `todo.updated`, `todo.deleted`) aparecem depois de reconciliados no servidor. Use **"Injetar falha (503)"** para ver o retry com backoff (`tentativa #2`, `#3`…) e a ordem preservada.
-6. **Conflito.** Simule dois dispositivos com a mesma conta: dois **navegadores/perfis diferentes** (ou uma janela anônima) — abas do mesmo navegador compartilham o mesmo IndexedDB e, portanto, não são dois dispositivos. Coloque ambos offline, edite o **mesmo campo** da mesma tarefa em cada um e reconecte: vence a edição mais recente e o outro dispositivo recebe um aviso de conflito resolvido. Campos **diferentes** são mesclados.
+4. **Reconexão.** Volte para *Online*. A régua fica **azul "Sincronizando"** e depois **"Sincronizado"**; as pendências somem. Na aba *Network* aparece o `POST /api/sync`.
+5. **Integração externa.** Em http://localhost:5100 os eventos (`todo.created`, `todo.updated`, `todo.deleted`) aparecem **somente depois** de reconciliados no servidor. Use **"Injetar falha (503)"** para ver o retry com backoff (`tentativa #2`, `#3`…) e a ordem preservada.
+6. **Conflito entre dispositivos.** Use **dois navegadores/perfis diferentes** (ou uma janela anônima) com a mesma conta — abas do mesmo navegador compartilham o mesmo IndexedDB e, portanto, não são dois dispositivos. Coloque ambos offline, edite o **mesmo campo** da mesma tarefa em cada um e reconecte: vence a edição mais recente e o outro dispositivo recebe um aviso de conflito resolvido. Campos **diferentes** são mesclados.
+7. **Celular / PWA.** No Chrome: DevTools → *Toggle device toolbar* (`Ctrl+Shift+M`) para o layout mobile; o ícone de instalar na barra de endereço instala o app (manifesto + service worker).
+8. **API direta.** Em http://localhost:5080/scalar: faça `POST /api/auth/login`, copie o `token`, autorize com *Bearer* e teste `POST /api/sync` e `GET /api/todos`.
+
+### 1.5 Rodando os testes (resumo)
+
+Detalhes e o que cada suíte cobre estão na [§5](#5-testes).
+
+```bash
+# Backend + consumidor (precisa do Docker em execução)
+dotnet test backend
+
+# Frontend
+cd frontend && npm ci && npm test -- --watch=false
+
+# E2E (o stack precisa estar no ar)
+docker compose up --build -d
+cd e2e && npm ci && npm test
+npm run report        # relatório HTML com screenshots/trace das falhas
+```
+
+### 1.6 Problemas comuns
+
+| Sintoma | Causa provável | Solução |
+|---|---|---|
+| `Cannot connect to the Docker daemon` / `error during connect` | Docker Desktop fechado | Abra o Docker Desktop, espere ficar pronto e repita o comando |
+| `port is already allocated` / `address already in use` | Alguma porta (8080, 5080, 5100, 55432) ocupada | Descubra o processo (Windows: `netstat -ano \| findstr :8080`; Linux/macOS: `lsof -i :8080`) e encerre-o, ou altere o mapeamento `"HOST:CONTAINER"` no `docker-compose.yml` |
+| Login funciona, mas aparece "Falha ao sincronizar" | API ainda subindo ou caiu | `docker compose logs api`; aguarde o healthcheck do banco |
+| Mudei o código e o Docker não refletiu | Imagem antiga | `docker compose up --build` (ou `build --no-cache`) |
+| Quero começar com o banco limpo | O volume `pgdata` persiste | `docker compose down -v` |
+| O app em `:4200` não recarrega offline | Service worker desligado no `ng serve` | Use http://localhost:8080 (build de produção) |
+| Duas abas "não conflitam" | Compartilham o mesmo IndexedDB | Use dois navegadores/perfis ou janela anônima |
+| `dotnet test` falha ao iniciar o banco | Docker parado (Testcontainers) | Inicie o Docker e repita |
+| E2E: Chrome não encontrado (`chrome` distribution) | Google Chrome não instalado | Instale o Chrome (ou rode `npx playwright install chrome` dentro de `e2e`) |
+| E2E falham logo no início | Stack fora do ar | `docker compose up --build -d` e espere http://localhost:8080 responder |
+| E2E de integração instável após falhas injetadas | Contador global do consumidor | `docker compose restart consumer` |
 
 ---
 
